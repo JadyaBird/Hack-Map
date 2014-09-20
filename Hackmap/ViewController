@@ -1,0 +1,215 @@
+//
+//  ViewController.m
+//  Hackmap
+//
+//  Created by Timothy Tong on 2014-09-20.
+//  Copyright (c) 2014 Timothy Tong. All rights reserved.
+//
+
+#import "ViewController.h"
+#import <MyoKit/MyoKit.h>
+
+@interface ViewController ()
+@property(nonatomic, readwrite)BOOL leftAlreadyAlerted;
+@property(nonatomic, readwrite)BOOL rightAlreadyAlerted;
+@property(nonatomic, readwrite)BOOL leftConnected;
+@property(nonatomic, readwrite)BOOL rightConnected;
+@property(nonatomic, readwrite)NSUUID *leftMyo;
+@property(nonatomic, readwrite)NSUUID *rightMyo;
+@property(nonatomic, strong)UILabel *leftLabel;
+@property(nonatomic, strong)UILabel *rightLabel;
+@property(nonatomic, strong)TLMPose *currentPose;
+@property(nonatomic, strong)UIAlertView *alertView;
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.leftAlreadyAlerted = NO;
+    self.rightAlreadyAlerted = NO;
+    self.leftConnected = NO;
+    self.rightConnected = NO;
+    self.view.backgroundColor = [UIColor whiteColor];
+    UIButton *connectBtn = [[UIButton alloc]initWithFrame:CGRectMake(self.view.frame.size.width/2-150, self.view.frame.size.height/2-20, 300, 40)];
+    UILabel *connectBtnLabel = [[UILabel alloc]initWithFrame:CGRectMake(0, 0, 300, 40)];
+    connectBtnLabel.text = @"CONNECT";
+    connectBtnLabel.textAlignment = NSTextAlignmentCenter;
+    connectBtnLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:50];
+    connectBtnLabel.textColor = [UIColor blackColor];
+    [connectBtn addSubview:connectBtnLabel];
+    [self.view addSubview:connectBtn];
+    [connectBtn addTarget:self action:@selector(connect:) forControlEvents:UIControlEventTouchUpInside];
+    
+    //LABELS
+    self.leftLabel = [[UILabel alloc]initWithFrame:CGRectMake(20, self.view.frame.size.height/2 + 50, self.view.frame.size.width-40, 50)];
+    self.leftLabel.text = @"LEFT: WAITING FOR CONNECTION";
+    self.leftLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:40.0];
+    [self.view addSubview:self.leftLabel];
+    
+    self.rightLabel = [[UILabel alloc]initWithFrame:CGRectMake(20, self.view.frame.size.height/2 + 120, self.view.frame.size.width-40, 50)];
+    self.rightLabel.text = @"RIGHT: WAITING FOR CONNECTION";
+    self.rightLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:40.0];
+    [self.view addSubview:self.rightLabel];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(didConnectDevice:)
+                                                 name:TLMHubDidConnectDeviceNotification
+                                               object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(didDisconnected:)
+                                                 name:TLMHubDidDisconnectDeviceNotification
+                                               object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(didReceivePoseChange:)
+                                                 name:TLMMyoDidReceivePoseChangedNotification
+                                               object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(didRecognizeArm:)
+                                                 name:TLMMyoDidReceiveArmRecognizedEventNotification
+                                               object:nil];
+    
+    // Do any additional setup after loading the view, typically from a nib.
+}
+- (void)didDisconnected:(NSNotification *)notification{
+    NSLog(@"Did disconnected");
+}
+
+- (void)didConnectDevice:(NSNotification *)notification{
+    NSLog(@"Did connect device");
+    NSMutableString *resultString = [NSMutableString stringWithFormat:@""];
+    NSArray *myosArray = [TLMHub sharedHub].myoDevices;
+    TLMMyo *myo = [myosArray lastObject];
+    [resultString appendString:[NSString stringWithFormat:@"%@",myo.identifier]];
+    if (!self.leftConnected) {
+        if (!self.leftAlreadyAlerted) {
+            [self alertWithTitle:@"Myo connected" andContent:@"Please perform the setup gesture."andCancelButton:@"OK"];
+            self.leftAlreadyAlerted = YES;
+        }
+    }
+    else if (!self.rightConnected){
+        if (!self.rightAlreadyAlerted) {
+            [self alertWithTitle:@"Myo connected" andContent:@"Please perform the setup gesture."andCancelButton:@"OK"];
+        }
+    }
+}
+
+- (void)didDisconnectDevice:(NSNotification *)notification {
+    NSArray *array = [TLMHub sharedHub].myoDevices;
+    NSString *disconnectedArm;
+    BOOL deviceStillConnected = false;
+    for (int i = 0; i < array.count; i++) {
+        TLMMyo *myo = [array objectAtIndex:i];
+        if (myo.identifier == self.leftMyo || myo.identifier == self.rightMyo) {
+            deviceStillConnected = true;
+        }
+        else{
+            
+        }
+        if (!deviceStillConnected) {
+            if ([disconnectedArm isEqualToString:@"Left"]) {
+                self.leftMyo = nil;
+                self.leftAlreadyAlerted = NO;
+            }
+            else if([disconnectedArm isEqualToString:@"Right"]){
+                self.rightMyo = nil;
+                self.rightAlreadyAlerted = NO;
+            }
+        }
+    }
+
+}
+
+- (void)didLoseArm:(NSNotification *)notification {
+    
+}
+
+- (void)alertWithTitle:(NSString *)title andContent:(NSString *)content andCancelButton:(NSString *)cancel{
+    self.alertView = [[UIAlertView alloc]initWithTitle:title message:content delegate:nil cancelButtonTitle:cancel otherButtonTitles:nil];
+    [self.alertView show];
+}
+
+- (void)didReceivePoseChange:(NSNotification *)notification {
+    // Retrieve the pose from the NSNotification's userInfo with the kTLMKeyPose key.
+    TLMPose *pose = notification.userInfo[kTLMKeyPose];
+    self.currentPose = pose;
+    
+    // Handle the cases of the TLMPoseType enumeration
+    switch (pose.type) {
+        case TLMPoseTypeUnknown:
+        case TLMPoseTypeRest:
+            NSLog(@"Rest");
+            break;
+        case TLMPoseTypeFist:
+            NSLog(@"Fist");
+            break;
+        case TLMPoseTypeWaveIn:
+            NSLog(@"Wave In");
+            break;
+        case TLMPoseTypeWaveOut:
+            NSLog(@"Wave Out");
+            break;
+        case TLMPoseTypeFingersSpread:
+            NSLog(@"Fingers Spread");
+            break;
+        case TLMPoseTypeThumbToPinky:
+            NSLog(@"Thumb to Pinky");
+            break;
+    }
+}
+
+
+- (void)didRecognizeArm:(NSNotification *)notification {
+    NSLog(@"!!!!!!!!!Did recognize arm!!!!!!!!");
+    [self.alertView dismissWithClickedButtonIndex:0 animated:NO];
+    // Retrieve the arm event from the notification's userInfo with the kTLMKeyArmRecognizedEvent key.
+    TLMArmRecognizedEvent *armEvent = notification.userInfo[kTLMKeyArmRecognizedEvent];
+    
+    // Update the armLabel with arm information
+    NSString *armString = armEvent.arm == TLMArmRight ? @"Right" : @"Left";
+    if ([armString isEqualToString:@"Right"]) {
+        if (self.rightMyo == nil) {
+            [self alertWithTitle:@"Success" andContent:@"Myo connected on RIGHT arm" andCancelButton:@"ok"];
+            self.rightMyo = armEvent.myo.identifier;
+            self.rightLabel.text = [NSString stringWithFormat:@"%@",self.rightMyo.UUIDString];
+        }
+        else{
+            [self alertWithTitle:@"Error" andContent:@"More than one myo worn on RIGHT arm"andCancelButton:@"ok"];
+            //DISCONNECT!
+            if (!self.leftConnected && self.leftAlreadyAlerted) {
+                self.leftAlreadyAlerted = NO;
+            }
+        }
+    }
+    else if([armString isEqualToString:@"Left"]){
+        if (self.leftMyo == nil) {
+            [self alertWithTitle:@"Success" andContent:@"Myo connected on LEFT arm"andCancelButton:@"ok"];
+            self.leftMyo = armEvent.myo.identifier;
+            self.leftLabel.text = [NSString stringWithFormat:@"%@",self.leftMyo.UUIDString];
+        }
+        else{
+            [self alertWithTitle:@"Error" andContent:@"More than one myo worn on LEFT arm"andCancelButton:@"ok"];
+            //DISCONNECT!
+            if (!self.rightConnected && self.rightAlreadyAlerted) {
+                self.rightAlreadyAlerted = NO;
+            }
+        }
+    }
+    //    NSString *directionString = armEvent.xDirection == TLMArmXDirectionTowardWrist ? @"Toward Wrist" : @"Toward Elbow";
+    //    self.armLabel.text = [NSString stringWithFormat:@"Arm: %@ X-Direction: %@", armString, directionString];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+- (void)connect:(id)sender{
+    UINavigationController *controller = [TLMSettingsViewController settingsInNavigationController];
+    [self presentViewController:controller animated:YES completion:nil];
+}
+
+@end
