@@ -116,7 +116,7 @@
         //NSLog(@"Two hand gestures available");
     }
     else{
-        [self alertWithTitle:@"Notice" andContent:@"Using single hand gestures" andCancelButton:@"OK"];
+//        [self alertWithTitle:@"Notice" andContent:@"Using single hand gestures" andCancelButton:@"OK"];
     }
     MapsViewController *mapsVC = [[MapsViewController alloc]init];
     [self presentViewController:mapsVC animated:YES completion:^{

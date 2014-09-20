@@ -26,6 +26,8 @@ typedef enum controlMode{
 @property (nonatomic)NSInteger backSMStage;
 @property (nonatomic, strong)CLGeocoder *geocoder;
 @property (nonatomic, strong)CLLocationManager *locationManager;
+@property (nonatomic, strong)UIImageView *iconView;
+@property (nonatomic, readwrite)BOOL repeat;
 @end
 
 @implementation MapsViewController
@@ -33,13 +35,22 @@ typedef enum controlMode{
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.currentMode = MControlModeInit;
+    self.repeat = NO;
     self.backSMStage = 1;
     self.map = [[MKMapView alloc]initWithFrame:self.view.frame];
     self.map.delegate = self;
     self.map.mapType = MKMapTypeSatellite;
     self.map.autoresizingMask=UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
     [self.view addSubview:self.map];
+    UIView *bottomBar = [[UIView alloc]initWithFrame:CGRectMake(0, self.view.frame.size.height-40, self.view.frame.size.width, 40)];
+    bottomBar.backgroundColor = [UIColor whiteColor];
+    UIImage *play = [UIImage imageNamed:@"play.png"];
+    self.iconView = [[UIImageView alloc]initWithFrame:CGRectMake(10, 5, 30, 30)];
+    self.iconView.alpha = 0.7;
+    self.iconView.image = play;
+    [bottomBar addSubview:self.iconView];
     
+    [self.view addSubview:bottomBar];
     // Do any additional setup after loading the view.
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(didLoseArm:)
@@ -109,6 +120,16 @@ typedef enum controlMode{
         case TLMPoseTypeFist:
             NSLog(@"Fist");
             poseString = @"Fist";
+            MKCoordinateRegion outRegion;
+            //Set Zoom level using Span
+            MKCoordinateSpan outSpan;
+            outRegion.center=self.map.region.center;
+            
+            outSpan.latitudeDelta=self.map.region.span.latitudeDelta * 4;
+            outSpan.longitudeDelta=self.map.region.span.longitudeDelta *4;
+
+            outRegion.span=outSpan;
+            [self.map setRegion:outRegion animated:YES];
             break;
         case TLMPoseTypeWaveIn:
             NSLog(@"Wave In");
@@ -134,21 +155,62 @@ typedef enum controlMode{
                 self.backSMStage = 1;
                 [self back];
             }
-
+            
             poseString = @"Wave Out";
             break;
         case TLMPoseTypeFingersSpread:
             NSLog(@"Fingers Spread");
+            MKCoordinateRegion inRegion;
+            //Set Zoom level using Span
+            MKCoordinateSpan inSpan;
+            inRegion.center=self.map.region.center;
+            
+            inSpan.latitudeDelta=self.map.region.span.latitudeDelta /2.0002;
+            inSpan.longitudeDelta=self.map.region.span.longitudeDelta /2.0002;
+            inRegion.span=inSpan;
+            [self.map setRegion:inRegion animated:TRUE];
             poseString = @"Fingers Spread";
             break;
         case TLMPoseTypeThumbToPinky:
             NSLog(@"Thumb to Pinky");
             poseString = @"Thumb to Pinky";
+            if (self.currentMode == MControlModeStandby) {
+                NSLog(@"Switching to normal mode");
+                self.currentMode = MControlModeNormal;
+                UIImage *link = [UIImage imageNamed:@"link.png"];
+                [self.iconView setImage:link];
+                self.repeat = YES;
+                [self blinkIcon];
+            }
+            else if(self.currentMode == MControlModeNormal){
+                NSLog(@"Switching to normal mode");
+                self.repeat = NO;
+                self.currentMode = MControlModeStandby;
+            }
             break;
     }
 }
 
+- (void)blinkIcon{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [UIView animateWithDuration:0.9 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+            self.iconView.alpha = 0.2;
+        } completion:^(BOOL finished) {
+            self.iconView.alpha = 1;
+            if (self.repeat) {
+                [self blinkIcon];
+            }
+            else{
+                [self.iconView setImage:[UIImage imageNamed:@"play.png"]];
+            }
+            
+        }];
+    });
+    
+}
+
 - (void)back{
+    [self.alertView dismissWithClickedButtonIndex:0 animated:NO];
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
@@ -159,16 +221,25 @@ typedef enum controlMode{
         self.locationManager = [[CLLocationManager alloc] init];
     
     self.locationManager.delegate = self;
-    self.locationManager.desiredAccuracy = kCLLocationAccuracyKilometer;
+    self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
+    ;
     
     // Set a movement threshold for new events.
     self.locationManager.distanceFilter = 500; // meters
     
     [self.locationManager startUpdatingLocation];
     self.currentMode = MControlModeStandby;
+    //    [self.map setCenterCoordinate:self.map.userLocation.coordinate animated:YES];
     NSLog(@"Now standing by");
-    [self.map setCenterCoordinate:self.map.userLocation.coordinate animated:YES];
+}
 
+- (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation  {
+    NSLog(@"LOCATION UPDATED");
+    CLLocationCoordinate2D loc = [newLocation coordinate];
+    [self.map setCenterCoordinate:loc];
+    MKPointAnnotation *point = [[MKPointAnnotation alloc] init];
+    point.coordinate = loc;
+    [self.map addAnnotation:point];
 }
 
 // Delegate method from the CLLocationManagerDelegate protocol.

@@ -29,6 +29,7 @@
 		3379F1F519CDBD9800BC4AA0 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3379F1F419CDBD9800BC4AA0 /* MapKit.framework */; };
 		3379F1F719CDDFF100BC4AA0 /* play.png in Resources */ = {isa = PBXBuildFile; fileRef = 3379F1F619CDDFF100BC4AA0 /* play.png */; };
 		3379F1F919CDE6BA00BC4AA0 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3379F1F819CDE6BA00BC4AA0 /* CoreLocation.framework */; };
+		3379F20319CE056600BC4AA0 /* link.png in Resources */ = {isa = PBXBuildFile; fileRef = 3379F20219CE056600BC4AA0 /* link.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +72,7 @@
 		3379F1F419CDBD9800BC4AA0 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		3379F1F619CDDFF100BC4AA0 /* play.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = play.png; sourceTree = "<group>"; };
 		3379F1F819CDE6BA00BC4AA0 /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
+		3379F20219CE056600BC4AA0 /* link.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = link.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -157,6 +159,7 @@
 		3323226519CDB54500E0EC7E /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				3379F20219CE056600BC4AA0 /* link.png */,
 				3379F1F619CDDFF100BC4AA0 /* play.png */,
 				3323226619CDB54500E0EC7E /* Hackmap-Info.plist */,
 				3323226719CDB54500E0EC7E /* InfoPlist.strings */,
@@ -264,6 +267,7 @@
 				3323227519CDB54500E0EC7E /* Main_iPad.storyboard in Resources */,
 				3323227A19CDB54500E0EC7E /* Images.xcassets in Resources */,
 				3323227219CDB54500E0EC7E /* Main_iPhone.storyboard in Resources */,
+				3379F20319CE056600BC4AA0 /* link.png in Resources */,
 				3323226919CDB54500E0EC7E /* InfoPlist.strings in Resources */,
 				3379F1F719CDDFF100BC4AA0 /* play.png in Resources */,
 			);
