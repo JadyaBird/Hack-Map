@@ -7,6 +7,7 @@
 //
 
 #import "ViewController.h"
+#import "MapsViewController.h"
 #import <MyoKit/MyoKit.h>
 
 @interface ViewController ()
@@ -21,6 +22,7 @@
 @property(nonatomic, strong)TLMPose *currentPose;
 @property(nonatomic, strong)UIAlertView *alertView;
 @property(nonatomic, strong)UIButton *gotoMapsButton;
+@property(nonatomic, strong)UILabel *poseLabel;
 @end
 
 @implementation ViewController
@@ -32,12 +34,14 @@
     self.leftConnected = NO;
     self.rightConnected = NO;
     self.view.backgroundColor = [UIColor whiteColor];
-    UIButton *connectBtn = [[UIButton alloc]initWithFrame:CGRectMake(self.view.frame.size.width/2-150, self.view.frame.size.height/2-20, 300, 40)];
-    UILabel *connectBtnLabel = [[UILabel alloc]initWithFrame:CGRectMake(0, 0, 300, 40)];
+    UIButton *connectBtn = [[UIButton alloc]initWithFrame:CGRectMake(self.view.frame.size.width/2-130, self.view.frame.size.height/2-20, 260, 40)];
+    UILabel *connectBtnLabel = [[UILabel alloc]initWithFrame:CGRectMake(0, 0, 260, 40)];
     connectBtnLabel.text = @"CONNECT";
     connectBtnLabel.textAlignment = NSTextAlignmentCenter;
-    connectBtnLabel.font = [UIFont fontWithName:@"HelveticaNeue" size:50];
+    connectBtnLabel.font = [UIFont fontWithName:@"HelveticaNeue" size:35];
     connectBtnLabel.textColor = [UIColor blackColor];
+    connectBtnLabel.layer.borderWidth = 1;
+    connectBtnLabel.layer.cornerRadius = 20;
     [connectBtn addSubview:connectBtnLabel];
     [self.view addSubview:connectBtn];
     [connectBtn addTarget:self action:@selector(connect:) forControlEvents:UIControlEventTouchUpInside];
@@ -45,27 +49,34 @@
     //LABELS
     self.leftLabel = [[UILabel alloc]initWithFrame:CGRectMake(20, self.view.frame.size.height/2 + 50, self.view.frame.size.width-40, 100)];
     self.leftLabel.text = @"LEFT: WAITING FOR CONNECTION";
-    self.leftLabel.font = [UIFont fontWithName:@"HelveticaNeue-Thin" size:35.0];
+    self.leftLabel.font = [UIFont fontWithName:@"HelveticaNeue-Thin" size:30.0];
     self.leftLabel.lineBreakMode = NSLineBreakByCharWrapping;
     self.leftLabel.numberOfLines = 0;
     [self.view addSubview:self.leftLabel];
     
     self.rightLabel = [[UILabel alloc]initWithFrame:CGRectMake(20, self.view.frame.size.height/2 + 170, self.view.frame.size.width-40, 100)];
     self.rightLabel.text = @"RIGHT: WAITING FOR CONNECTION";
-    self.rightLabel.font = [UIFont fontWithName:@"HelveticaNeue-Thin" size:35.0];
+    self.rightLabel.font = [UIFont fontWithName:@"HelveticaNeue-Thin" size:30.0];
     self.rightLabel.lineBreakMode = NSLineBreakByCharWrapping;
     self.rightLabel.numberOfLines = 0;
     [self.view addSubview:self.rightLabel];
     
+    self.poseLabel = [[UILabel alloc]initWithFrame:CGRectMake(20, self.view.frame.size.height/2 + 300, self.view.frame.size.width - 40, 100)];
+    self.poseLabel.text = @"Current pose";
+    self.poseLabel.font = [UIFont fontWithName:@"HelveticaNeue-Light" size:30.0];
+    [self.view addSubview:self.poseLabel];
+    
     //GO TO MAPS BUTTON
     self.gotoMapsButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    self.gotoMapsButton.frame = CGRectMake(self.view.frame.size.width-50, self.view.frame.size.height-30, 50, 30);
-    UILabel *gotoMapsLabel = [[UILabel alloc]initWithFrame:CGRectMake(0, 0, 50, 30)];
+    self.gotoMapsButton.frame = CGRectMake(self.view.frame.size.width-150, self.view.frame.size.height-30, 150, 30);
+    UILabel *gotoMapsLabel = [[UILabel alloc]initWithFrame:CGRectMake(0, 0, 150, 30)];
     gotoMapsLabel.text = @"GO TO MAPS";
     gotoMapsLabel.textAlignment = NSTextAlignmentCenter;
-    gotoMapsLabel.font = [UIFont fontWithName:@"HelveticaNeue-UltraLight" size:30];
+    gotoMapsLabel.font = [UIFont fontWithName:@"HelveticaNeue-UltraLight" size:20];
+    gotoMapsLabel.textColor = [UIColor blackColor];
     [self.gotoMapsButton addSubview:gotoMapsLabel];
-    self.gotoMapsButton.alpha = 0;
+//    self.gotoMapsButton.alpha = 0;
+    [self.view addSubview:self.gotoMapsButton];
     [self.gotoMapsButton addTarget:self action:@selector(gotoMaps:) forControlEvents:UIControlEventTouchUpInside];
     
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -96,21 +107,27 @@
     // Do any additional setup after loading the view, typically from a nib.
 }
 //- (void)didDisconnected:(NSNotification *)notification{
-//    NSLog(@"Did disconnected");
+//    //NSLog(@"Did disconnected");
 //}
 
 - (void)gotoMaps:(id)sender{
-    NSLog(@"GOING TO MAPS");
+    //NSLog(@"GOING TO MAPS");
     if (self.rightMyo!=nil && self.leftMyo!=nil) {
-        NSLog(@"Two hand gestures available");
+        //NSLog(@"Two hand gestures available");
     }
     else{
         [self alertWithTitle:@"Notice" andContent:@"Using single hand gestures" andCancelButton:@"OK"];
     }
+    MapsViewController *mapsVC = [[MapsViewController alloc]init];
+    [self presentViewController:mapsVC animated:YES completion:^{
+        mapsVC.leftMyo = self.leftMyo;
+        mapsVC.rightMyo = self.rightMyo;
+        [mapsVC getUserLocation];
+    }];
 }
 
 - (void)didConnectDevice:(NSNotification *)notification{
-    NSLog(@"Did connect device");
+    ////NSLog(@"Did connect device");
     NSMutableString *resultString = [NSMutableString stringWithFormat:@""];
     NSArray *myosArray = [TLMHub sharedHub].myoDevices;
     TLMMyo *myo = [myosArray lastObject];
@@ -143,7 +160,7 @@
         self.rightLabel.text = @"RIGHT: WAITING FOR CONNECTION";
     }
     for (int i = 0; i < array.count; i++) {
-        NSLog(@"Running loop #%d",i);
+        //NSLog(@"Running loop #%d",i);
         TLMMyo *myo = [array objectAtIndex:i];
         if (myo.identifier == self.leftMyo || myo.identifier == self.rightMyo) {
             deviceStillConnected = true;
@@ -180,7 +197,7 @@
      NSString *disconnectedArm;
      BOOL deviceStillConnected = false;
      for (int i = 0; i < array.count; i++) {
-     NSLog(@"Running loop #%d",i);
+     //NSLog(@"Running loop #%d",i);
      TLMMyo *myo = [array objectAtIndex:i];
      if (myo.identifier == self.leftMyo || myo.identifier == self.rightMyo) {
      deviceStillConnected = true;
@@ -220,32 +237,40 @@
     self.currentPose = pose;
     
     // Handle the cases of the TLMPoseType enumeration
+    NSString *poseString;
     switch (pose.type) {
         case TLMPoseTypeUnknown:
         case TLMPoseTypeRest:
-            NSLog(@"Rest");
+            //NSLog(@"Rest");
+            poseString = @"REST";
             break;
         case TLMPoseTypeFist:
-            NSLog(@"Fist");
+            //NSLog(@"Fist");
+            poseString = @"Fist";
             break;
         case TLMPoseTypeWaveIn:
-            NSLog(@"Wave In");
+            //NSLog(@"Wave In");
+            poseString = @"Wave In";
             break;
         case TLMPoseTypeWaveOut:
-            NSLog(@"Wave Out");
+            //NSLog(@"Wave Out");
+            poseString = @"Wave Out";
             break;
         case TLMPoseTypeFingersSpread:
-            NSLog(@"Fingers Spread");
+            //NSLog(@"Fingers Spread");
+            poseString = @"Fingers Spread";
             break;
         case TLMPoseTypeThumbToPinky:
-            NSLog(@"Thumb to Pinky");
+            //NSLog(@"Thumb to Pinky");
+            poseString = @"Thumb to Pinky";
             break;
     }
+    self.poseLabel.text = [NSString stringWithFormat:@"Current pose: %@",poseString];
 }
 
 
 - (void)didRecognizeArm:(NSNotification *)notification {
-    NSLog(@"!!!!!!!!!Did recognize arm!!!!!!!!");
+    //NSLog(@"!!!!!!!!!Did recognize arm!!!!!!!!");
     [self.alertView dismissWithClickedButtonIndex:0 animated:NO];
     // Retrieve the arm event from the notification's userInfo with the kTLMKeyArmRecognizedEvent key.
     TLMArmRecognizedEvent *armEvent = notification.userInfo[kTLMKeyArmRecognizedEvent];
@@ -263,10 +288,10 @@
                 self.leftAlreadyAlerted = NO;
             }
             self.rightLabel.text = [NSString stringWithFormat:@"RIGHT: %@",self.rightMyo.UUIDString];
-            [UIView animateWithDuration:0.3 delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
-                self.gotoMapsButton.alpha = 1;
-            } completion:^(BOOL finished) {
-            }];
+//            [UIView animateWithDuration:0.3 delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+//                self.gotoMapsButton.alpha = 1;
+//            } completion:^(BOOL finished) {
+//            }];
         }
         else{
             if (armEvent.myo.identifier != self.rightMyo) {
@@ -290,6 +315,10 @@
                 self.rightAlreadyAlerted = NO;
             }
             self.leftLabel.text = [NSString stringWithFormat:@"LEFT: %@",self.leftMyo.UUIDString];
+//            [UIView animateWithDuration:0.3 delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+//                self.gotoMapsButton.alpha = 1;
+//            } completion:^(BOOL finished) {
+//            }];
         }
         else{
             if (armEvent.myo.identifier != self.leftMyo) {
@@ -314,5 +343,4 @@
     UINavigationController *controller = [TLMSettingsViewController settingsInNavigationController];
     [self presentViewController:controller animated:YES completion:nil];
 }
-
 @end
