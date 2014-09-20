@@ -4,7 +4,7 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>HackMap.xcscheme</key>
+		<key>MapKit.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
@@ -12,12 +12,12 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
-		<key>8F83D0F119CD53E5007EE9E8</key>
+		<key>8F83D17819CD7C91007EE9E8</key>
 		<dict>
 			<key>primary</key>
 			<true/>
 		</dict>
-		<key>8F83D11219CD53E6007EE9E8</key>
+		<key>8F83D19C19CD7C91007EE9E8</key>
 		<dict>
 			<key>primary</key>
 			<true/>

@@ -14,10 +14,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8F83D0F119CD53E5007EE9E8"
-               BuildableName = "HackMap.app"
-               BlueprintName = "HackMap"
-               ReferencedContainer = "container:HackMap.xcodeproj">
+               BlueprintIdentifier = "8F83D17819CD7C91007EE9E8"
+               BuildableName = "MapKit.app"
+               BlueprintName = "MapKit"
+               ReferencedContainer = "container:MapKit.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -32,20 +32,20 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8F83D11219CD53E6007EE9E8"
-               BuildableName = "HackMapTests.xctest"
-               BlueprintName = "HackMapTests"
-               ReferencedContainer = "container:HackMap.xcodeproj">
+               BlueprintIdentifier = "8F83D19C19CD7C91007EE9E8"
+               BuildableName = "MapKitTests.xctest"
+               BlueprintName = "MapKitTests"
+               ReferencedContainer = "container:MapKit.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8F83D0F119CD53E5007EE9E8"
-            BuildableName = "HackMap.app"
-            BlueprintName = "HackMap"
-            ReferencedContainer = "container:HackMap.xcodeproj">
+            BlueprintIdentifier = "8F83D17819CD7C91007EE9E8"
+            BuildableName = "MapKit.app"
+            BlueprintName = "MapKit"
+            ReferencedContainer = "container:MapKit.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </TestAction>
@@ -61,10 +61,10 @@
       <BuildableProductRunnable>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8F83D0F119CD53E5007EE9E8"
-            BuildableName = "HackMap.app"
-            BlueprintName = "HackMap"
-            ReferencedContainer = "container:HackMap.xcodeproj">
+            BlueprintIdentifier = "8F83D17819CD7C91007EE9E8"
+            BuildableName = "MapKit.app"
+            BlueprintName = "MapKit"
+            ReferencedContainer = "container:MapKit.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <AdditionalOptions>
@@ -79,10 +79,10 @@
       <BuildableProductRunnable>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8F83D0F119CD53E5007EE9E8"
-            BuildableName = "HackMap.app"
-            BlueprintName = "HackMap"
-            ReferencedContainer = "container:HackMap.xcodeproj">
+            BlueprintIdentifier = "8F83D17819CD7C91007EE9E8"
+            BuildableName = "MapKit.app"
+            BlueprintName = "MapKit"
+            ReferencedContainer = "container:MapKit.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -1,6 +1,6 @@
 //
-//  HackMapTests.m
-//  HackMapTests
+//  MapKitTests.m
+//  MapKitTests
 //
 //  Created by Jenna Godwin on 2014-09-20.
 //  Copyright (c) 2014 Jenna Godwin. All rights reserved.
@@ -8,11 +8,11 @@
 
 #import <XCTest/XCTest.h>
 
-@interface HackMapTests : XCTestCase
+@interface MapKitTests : XCTestCase
 
 @end
 
-@implementation HackMapTests
+@implementation MapKitTests
 
 - (void)setUp
 {
