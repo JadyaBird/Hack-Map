@@ -21,6 +21,7 @@
     // Override point for customization after application launch.
     [[TLMHub sharedHub] setApplicationIdentifier:@"com.timothytong.hackmap"];
     [[TLMHub sharedHub] attachToAdjacent];
+    [TLMHub sharedHub].myoConnectionAllowance = 2;
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     self.window.rootViewController = [[ViewController alloc] init];
     [self.window makeKeyAndVisible];

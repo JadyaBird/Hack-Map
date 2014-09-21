@@ -28,18 +28,29 @@ typedef enum controlMode{
 @property (nonatomic, strong)CLLocationManager *locationManager;
 @property (nonatomic, strong)UIImageView *iconView;
 @property (nonatomic, readwrite)BOOL repeat;
+@property (nonatomic, readwrite)BOOL canRotate;
+@property (nonatomic, readwrite)BOOL relRollConfirmed;
+@property (nonatomic, strong)UILabel *pitch;
+@property (nonatomic, strong)UILabel *yaw;
+@property (nonatomic, strong)UILabel *roll;
+@property (nonatomic)CLLocationDirection heading;
+@property (nonatomic, strong)NSTimer *timer;
+@property (nonatomic)CLLocationDirection relRoll;
 @end
 
 @implementation MapsViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.heading = 90;
     self.currentMode = MControlModeInit;
+    self.relRollConfirmed = NO;
     self.repeat = NO;
+    self.canRotate = NO;
     self.backSMStage = 1;
     self.map = [[MKMapView alloc]initWithFrame:self.view.frame];
     self.map.delegate = self;
-    self.map.mapType = MKMapTypeSatellite;
+    self.map.mapType = MKMapTypeStandard;
     self.map.autoresizingMask=UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
     [self.view addSubview:self.map];
     UIView *bottomBar = [[UIView alloc]initWithFrame:CGRectMake(0, self.view.frame.size.height-40, self.view.frame.size.width, 40)];
@@ -48,9 +59,27 @@ typedef enum controlMode{
     self.iconView = [[UIImageView alloc]initWithFrame:CGRectMake(10, 5, 30, 30)];
     self.iconView.alpha = 0.7;
     self.iconView.image = play;
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(toggleModes:)];
+    [self.iconView addGestureRecognizer:tap];
     [bottomBar addSubview:self.iconView];
-    
     [self.view addSubview:bottomBar];
+    CGFloat startingX = 40;
+    CGFloat width = (self.view.frame.size.width - startingX)*0.33;
+    self.pitch = [[UILabel alloc]initWithFrame:CGRectMake(startingX, 0, width, 40)];
+    self.yaw = [[UILabel alloc]initWithFrame:CGRectMake(startingX + width, 0, width, 40)];
+    self.roll = [[UILabel alloc]initWithFrame:CGRectMake(startingX + 2*width, 0, width, 40)];
+    self.pitch.font = [UIFont fontWithName:@"HelveticaNeue-Thin" size:25];
+    self.yaw.font = [UIFont fontWithName:@"HelveticaNeue-Thin" size:25];
+    self.roll.font = [UIFont fontWithName:@"HelveticaNeue-Thin" size:25];
+    self.pitch.textAlignment = NSTextAlignmentCenter;
+    self.yaw.textAlignment = NSTextAlignmentCenter;
+    self.roll.textAlignment = NSTextAlignmentCenter;
+    self.pitch.text = @"Pitch:";
+    self.yaw.text = @"Yaw:";
+    self.roll.text = @"Roll:";
+    [bottomBar addSubview:self.pitch];
+    [bottomBar addSubview:self.yaw];
+    [bottomBar addSubview:self.roll];
     // Do any additional setup after loading the view.
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(didLoseArm:)
@@ -82,10 +111,75 @@ typedef enum controlMode{
 - (void)didLoseArm:(NSNotification *)notification{
     [self.alertView dismissWithClickedButtonIndex:0 animated:NO];
     [self alertWithTitle:@"Arm Lost" andContent:@"Please re-adjust your myo and perform the setup gesture" andCancelButton:@"OK"];
-    
+    self.canRotate = NO;
+    self.repeat = NO;
+    self.relRollConfirmed = NO;
+    self.currentMode = MControlModeStandby;
+    //    [self.map.camera setHeading:90];
+}
+
+- (void)toggleModes:(id)sender{
+    if (self.currentMode == MControlModeStandby) {
+        NSLog(@"Switching to normal mode");
+        self.currentMode = MControlModeNormal;
+        UIImage *link = [UIImage imageNamed:@"link.png"];
+        [self.iconView setImage:link];
+        self.repeat = YES;
+        [self blinkIcon];
+    }
+    else if(self.currentMode == MControlModeNormal){
+        NSLog(@"Switching to normal mode");
+        self.repeat = NO;
+        self.relRollConfirmed = NO;
+        self.currentMode = MControlModeStandby;
+        self.canRotate = NO;
+    }
 }
 
 - (void)didReceiveOrientationEvent:(NSNotification *)notification{
+    // Retrieve the orientation from the NSNotification's userInfo with the kTLMKeyOrientationEvent key.
+    TLMOrientationEvent *orientationEvent = notification.userInfo[kTLMKeyOrientationEvent];
+    // Create Euler angles from the quaternion of the orientation.
+    TLMEulerAngles *angles = [TLMEulerAngles anglesWithQuaternion:orientationEvent.quaternion];
+    self.pitch.text =[NSString stringWithFormat: @"Pitch: %.2f",angles.pitch.degrees];
+    self.yaw.text = [NSString stringWithFormat: @"Yaw: %.2f",angles.yaw.degrees];
+    self.roll.text = [NSString stringWithFormat: @"Roll: %.2f",angles.roll.degrees];
+    if (!self.relRollConfirmed) {
+        if(self.currentMode == MControlModeNormal){
+            self.canRotate = YES;
+            self.relRoll = angles.roll.degrees;
+            NSLog(@"Can roll now");
+            self.relRollConfirmed = YES;
+        }
+    }
+    if (abs(angles.roll.degrees)>=10 && self.currentMode == MControlModeNormal) {
+        self.canRotate = YES;
+    }
+    
+//    if (abs(angles.roll.degrees)<=3){
+//        NSLog(@"<=3");
+//        self.canRotate = NO;
+//        self.relRollConfirmed = NO;
+//    }
+    if (self.canRotate) {
+//        [self.map.camera setHeading:self.heading];
+        self.heading = self.heading - (angles.roll.degrees - self.relRoll)*0.05;
+//        if (self.heading >= 300) {
+//            self.heading = 300;
+//        }
+//        else if(self.heading <= -120){
+//            self.heading = -120;
+//        }
+        [self.map.camera setHeading:self.heading];
+        //        }
+        
+    }
+    
+    // Next, we want to apply a rotation and perspective transformation based on the pitch, yaw, and roll.
+    
+    
+    // Apply the rotation and perspective transform to helloLabel.
+    
     
 }
 
@@ -111,6 +205,7 @@ typedef enum controlMode{
         case TLMPoseTypeUnknown:
         case TLMPoseTypeRest:
             NSLog(@"Rest");
+            [self.timer invalidate];
             poseString = @"REST";
             if ((arm == TLMArmLeft || arm == TLMArmRight) && self.backSMStage == 2 && self.currentMode == MControlModeStandby) {
                 NSLog(@"back SM stage 3");
@@ -119,20 +214,23 @@ typedef enum controlMode{
             break;
         case TLMPoseTypeFist:
             NSLog(@"Fist");
+            [self.timer invalidate];
             poseString = @"Fist";
             MKCoordinateRegion outRegion;
             //Set Zoom level using Span
             MKCoordinateSpan outSpan;
             outRegion.center=self.map.region.center;
             
-            outSpan.latitudeDelta=self.map.region.span.latitudeDelta * 4;
-            outSpan.longitudeDelta=self.map.region.span.longitudeDelta *4;
-
+            outSpan.latitudeDelta=self.map.region.span.latitudeDelta * 2;
+            outSpan.longitudeDelta=self.map.region.span.longitudeDelta *2;
+            
             outRegion.span=outSpan;
-            [self.map setRegion:outRegion animated:YES];
+            
+            [self.map setRegion:[self.map regionThatFits:outRegion] animated:YES];
             break;
         case TLMPoseTypeWaveIn:
             NSLog(@"Wave In");
+            [self.timer invalidate];
             if (arm == TLMArmRight && self.backSMStage == 1 && self.currentMode == MControlModeStandby) {
                 NSLog(@"back SM stage 2");
                 self.backSMStage = 2;
@@ -141,6 +239,9 @@ typedef enum controlMode{
                 NSLog(@"back from standby!!!");
                 self.backSMStage = 1;
                 [self back];
+            }
+            if (arm == TLMArmLeft) {
+                self.timer = [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:@selector(toggleModes:) userInfo:nil repeats:NO];
             }
             poseString = @"Wave In";
             break;
@@ -155,11 +256,14 @@ typedef enum controlMode{
                 self.backSMStage = 1;
                 [self back];
             }
-            
+            if (arm == TLMArmRight) {
+                self.timer = [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:@selector(toggleModes:) userInfo:nil repeats:NO];
+            }
             poseString = @"Wave Out";
             break;
         case TLMPoseTypeFingersSpread:
             NSLog(@"Fingers Spread");
+            [self.timer invalidate];
             MKCoordinateRegion inRegion;
             //Set Zoom level using Span
             MKCoordinateSpan inSpan;
@@ -174,19 +278,6 @@ typedef enum controlMode{
         case TLMPoseTypeThumbToPinky:
             NSLog(@"Thumb to Pinky");
             poseString = @"Thumb to Pinky";
-            if (self.currentMode == MControlModeStandby) {
-                NSLog(@"Switching to normal mode");
-                self.currentMode = MControlModeNormal;
-                UIImage *link = [UIImage imageNamed:@"link.png"];
-                [self.iconView setImage:link];
-                self.repeat = YES;
-                [self blinkIcon];
-            }
-            else if(self.currentMode == MControlModeNormal){
-                NSLog(@"Switching to normal mode");
-                self.repeat = NO;
-                self.currentMode = MControlModeStandby;
-            }
             break;
     }
 }
