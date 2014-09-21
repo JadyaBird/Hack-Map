@@ -63,7 +63,7 @@ function onPoseEdge(pose, edge)
         -- Double left click
         if pose == "fingersSpread" and edge == "on" then
             myo.vibrate("short")
-            myo.mouse("left", "click")
+            -- myo.keyboard("equal", "press")
             myo.mouse("left", "click")
             myo.debug("FINGERS SPREAD")
         end
