@@ -30,12 +30,16 @@ typedef enum controlMode{
 @property (nonatomic, readwrite)BOOL repeat;
 @property (nonatomic, readwrite)BOOL canRotate;
 @property (nonatomic, readwrite)BOOL relRollConfirmed;
+@property (nonatomic, readwrite)BOOL relYawConfirmed;
 @property (nonatomic, strong)UILabel *pitch;
 @property (nonatomic, strong)UILabel *yaw;
 @property (nonatomic, strong)UILabel *roll;
 @property (nonatomic)CLLocationDirection heading;
 @property (nonatomic, strong)NSTimer *timer;
 @property (nonatomic)CLLocationDirection relRoll;
+@property (nonatomic)CLLocationDirection relYaw;
+@property (nonatomic, readwrite)BOOL panUDStarted;
+@property (nonatomic, readwrite)BOOL panLRStarted;
 @end
 
 @implementation MapsViewController
@@ -45,7 +49,10 @@ typedef enum controlMode{
     self.heading = 90;
     self.currentMode = MControlModeInit;
     self.relRollConfirmed = NO;
+    self.relYawConfirmed = NO;
     self.repeat = NO;
+    self.panUDStarted = NO;
+    self.panLRStarted = NO;
     self.canRotate = NO;
     self.backSMStage = 1;
     self.map = [[MKMapView alloc]initWithFrame:self.view.frame];
@@ -59,9 +66,11 @@ typedef enum controlMode{
     self.iconView = [[UIImageView alloc]initWithFrame:CGRectMake(10, 5, 30, 30)];
     self.iconView.alpha = 0.7;
     self.iconView.image = play;
+    self.iconView.userInteractionEnabled = YES;
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(toggleModes:)];
     [self.iconView addGestureRecognizer:tap];
     [bottomBar addSubview:self.iconView];
+    [bottomBar bringSubviewToFront:self.iconView];
     [self.view addSubview:bottomBar];
     CGFloat startingX = 40;
     CGFloat width = (self.view.frame.size.width - startingX)*0.33;
@@ -141,46 +150,98 @@ typedef enum controlMode{
     TLMOrientationEvent *orientationEvent = notification.userInfo[kTLMKeyOrientationEvent];
     // Create Euler angles from the quaternion of the orientation.
     TLMEulerAngles *angles = [TLMEulerAngles anglesWithQuaternion:orientationEvent.quaternion];
-    self.pitch.text =[NSString stringWithFormat: @"Pitch: %.2f",angles.pitch.degrees];
-    self.yaw.text = [NSString stringWithFormat: @"Yaw: %.2f",angles.yaw.degrees];
-    self.roll.text = [NSString stringWithFormat: @"Roll: %.2f",angles.roll.degrees];
+    self.pitch.text =[NSString stringWithFormat: @"Pitch: %.2f",-angles.pitch.degrees];
+    
     if (!self.relRollConfirmed) {
-        if(self.currentMode == MControlModeNormal){
-            self.canRotate = YES;
-            self.relRoll = angles.roll.degrees;
-            NSLog(@"Can roll now");
-            self.relRollConfirmed = YES;
-        }
+        self.relRoll = angles.roll.degrees;
+        self.relRollConfirmed = YES;
     }
-    if (abs(angles.roll.degrees)>=10 && self.currentMode == MControlModeNormal) {
-        self.canRotate = YES;
+    if (!self.relYawConfirmed) {
+        self.relYaw = angles.yaw.degrees;
+        self.relYawConfirmed = YES;
     }
     
-//    if (abs(angles.roll.degrees)<=3){
-//        NSLog(@"<=3");
-//        self.canRotate = NO;
-//        self.relRollConfirmed = NO;
-//    }
-    if (self.canRotate) {
-//        [self.map.camera setHeading:self.heading];
-        self.heading = self.heading - (angles.roll.degrees - self.relRoll)*0.05;
-//        if (self.heading >= 300) {
-//            self.heading = 300;
-//        }
-//        else if(self.heading <= -120){
-//            self.heading = -120;
-//        }
-        [self.map.camera setHeading:self.heading];
-        //        }
+    double actualYawAngle = angles.yaw.degrees - self.relYaw;
+    if (actualYawAngle <= -180) {
+        actualYawAngle += 360;
+    }
+    
+    self.yaw.text = [NSString stringWithFormat: @"Yaw: %.2f",actualYawAngle];
+    double actualRollAngle = angles.roll.degrees - self.relRoll;
+    if (actualRollAngle <= -180) {
+        actualRollAngle += 360;
+    }
+    actualRollAngle = -actualRollAngle;
+    self.roll.text = [NSString stringWithFormat: @"Roll: %.2f",actualRollAngle];
+    //PAN UP/DOWN GESTURE
+    if (self.currentMode == MControlModeNormal) {
+        if (abs(angles.pitch.degrees) >=3 && !self.panUDStarted) {
+            self.panUDStarted = YES;
+        }
+        else if(self.panUDStarted){
+            double laDelta = self.map.region.span.latitudeDelta <= 1? self.map.region.span.latitudeDelta:1;
+            CLLocationCoordinate2D coordinate = CLLocationCoordinate2DMake(self.map.centerCoordinate.latitude + (angles.pitch.degrees - 10)*0.005*laDelta*laDelta, self.map.centerCoordinate.longitude);
+            [self.map setCenterCoordinate:coordinate animated:NO];
+        }
+        if (abs(angles.pitch.degrees) <= 3) {
+            self.panUDStarted = NO;
+        }
         
     }
     
-    // Next, we want to apply a rotation and perspective transformation based on the pitch, yaw, and roll.
     
+    //PAN LEFT/RIGHT GESTURE
+    if (self.currentMode == MControlModeNormal) {
+        if (abs(actualYawAngle) >=3 && !self.panLRStarted) {
+            self.panLRStarted = YES;
+        }
+        else if(self.panLRStarted){
+            double loDelta = self.map.region.span.longitudeDelta <= 1? self.map.region.span.longitudeDelta:1;
+            CLLocationCoordinate2D coordinate = CLLocationCoordinate2DMake(self.map.centerCoordinate.latitude, self.map.centerCoordinate.longitude - (actualYawAngle - 10)*0.005*loDelta*loDelta);
+            [self.map setCenterCoordinate:coordinate animated:NO];
+            
+        }
+        if (abs(actualYawAngle) <= 3) {
+            self.panLRStarted = NO;
+        }
+        
+    }
     
-    // Apply the rotation and perspective transform to helloLabel.
-    
-    
+    //ROLLING GESTURE
+    if (self.currentMode == MControlModeStandby) {
+        //        if (!self.relRollConfirmed) {
+        //            if(self.currentMode == MControlModeNormal){
+        //                self.canRotate = YES;
+        //                self.relRoll = angles.roll.degrees;
+        //                NSLog(@"Can roll now");
+        //                self.relRollConfirmed = YES;
+        //            }
+        //        }
+        
+        if (abs(actualRollAngle)>=10 && self.currentMode == MControlModeStandby) {
+            self.canRotate = YES;
+        }
+        //    if (abs(angles.roll.degrees)<=3){
+        //        NSLog(@"<=3");
+        //        self.canRotate = NO;
+        //        self.relRollConfirmed = NO;
+        //    }
+        if (abs(actualRollAngle)<=3) {
+            self.canRotate = NO;
+        }
+        if (self.canRotate) {
+            //        [self.map.camera setHeading:self.heading];
+            self.heading = self.heading - (actualRollAngle)*0.05;
+            [self.map.camera setHeading:self.heading];
+            //        if (self.heading >= 300) {
+            //            self.heading = 300;
+            //        }
+            //        else if(self.heading <= -120){
+            //            self.heading = -120;
+            //        }
+            //        }
+        }
+    }
 }
 
 - (void)didReceiveAccelerometerEvent:(NSNotification *)notification{
@@ -270,6 +331,7 @@ typedef enum controlMode{
             inRegion.center=self.map.region.center;
             
             inSpan.latitudeDelta=self.map.region.span.latitudeDelta /2.0002;
+            NSLog(@"latitudeDelta is %.2f",inSpan.latitudeDelta);
             inSpan.longitudeDelta=self.map.region.span.longitudeDelta /2.0002;
             inRegion.span=inSpan;
             [self.map setRegion:inRegion animated:TRUE];

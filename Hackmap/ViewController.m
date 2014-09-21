@@ -34,11 +34,11 @@
     self.leftConnected = NO;
     self.rightConnected = NO;
     self.view.backgroundColor = [UIColor whiteColor];
-    UIButton *connectBtn = [[UIButton alloc]initWithFrame:CGRectMake(self.view.frame.size.width/2-130, self.view.frame.size.height/2-20, 260, 40)];
-    UILabel *connectBtnLabel = [[UILabel alloc]initWithFrame:CGRectMake(0, 0, 260, 40)];
+    UIButton *connectBtn = [[UIButton alloc]initWithFrame:CGRectMake(self.view.frame.size.width/2-110, self.view.frame.size.height/2-70, 240, 45)];
+    UILabel *connectBtnLabel = [[UILabel alloc]initWithFrame:CGRectMake(0, 0, 220, 45)];
     connectBtnLabel.text = @"CONNECT";
     connectBtnLabel.textAlignment = NSTextAlignmentCenter;
-    connectBtnLabel.font = [UIFont fontWithName:@"HelveticaNeue" size:35];
+    connectBtnLabel.font = [UIFont fontWithName:@"Menlo" size:35];
     connectBtnLabel.textColor = [UIColor blackColor];
     connectBtnLabel.layer.borderWidth = 1;
     connectBtnLabel.layer.cornerRadius = 20;
