@@ -88,18 +88,14 @@ end
 function onPeriodic()
     -- code only executed when unlocked
     if myo.mouseControlEnabled() then
+        myo.centerMousePosition()
         -- counter logic to trigger keypresses at slower rate
         if isZoomingOut or isZoomingIn then
             timerCounter = timerCounter + 1
-            if timerCounter == 50 then
+            if timerCounter == 40 then
                 timerCounter = 0
             end
-        else
-            timerCounter = 0
-        end
-        
-        if timerCounter2 == 10
-            myo.centerMousePosition()
+            
             if isZoomingOut and timerCounter == 1 then
                 myo.keyboard("minus", "press")
                 myo.debug("zooming out")
@@ -107,7 +103,11 @@ function onPeriodic()
                 myo.keyboard("equal", "press")
                 myo.debug("zooming in")
             end
-            
+        else
+            timerCounter = 0
+        end
+                
+        -- if timerCounter2 == 3 then
             -- pitch controls up-down panning 
             pitch = 57.3 * myo.getPitch()
             if (myo.getXDirection() == "towardWrist") then
@@ -116,12 +116,14 @@ function onPeriodic()
             
             -- up-down panning conditions
             if pitch > 20 then
-                myo.keyboard("up_arrow", "down")
-            elseif pitch < 20 and pitch > -20 then
-                myo.keyboard("up_arrow", "up")
-                myo.keyboard("down_arrow","up")
+                    myo.keyboard("up_arrow", "press")
+                    myo.keyboard("up_arrow", "press")
+            -- elseif pitch < 20 and pitch > -20 then
+                -- myo.keyboard("up_arrow", "up")
+                -- myo.keyboard("down_arrow","up")
             elseif pitch < -20 then
-                myo.keyboard("down_arrow", "down")
+                    myo.keyboard("down_arrow", "press")
+                    myo.keyboard("down_arrow", "press")
             end
             
             -- yaw controls left-right panning 
@@ -137,15 +139,17 @@ function onPeriodic()
             
             -- left-right panning conditions
             if difference > 20 then
-                myo.keyboard("left_arrow", "down")
+                    myo.keyboard("left_arrow", "press")
+                    myo.keyboard("left_arrow", "press")
             elseif difference < -20 then
-                myo.keyboard("right_arrow", "down")
-            elseif difference < 20 and pitch > -20 then
-                myo.keyboard("left_arrow", "up")
-                myo.keyboard("right_arrow","up")
+                    myo.keyboard("right_arrow", "press")
+                    myo.keyboard("right_arrow", "press")
+            -- elseif difference < 20 and pitch > -20 then
+                -- myo.keyboard("left_arrow", "up")
+                -- myo.keyboard("right_arrow","up")
             end
             timerCounter2 = 0
-        end
+        -- end
 
         timerCounter2 = timerCounter2 + 1
         
